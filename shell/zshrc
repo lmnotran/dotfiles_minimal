@@ -1,0 +1,48 @@
+# ~/.zshrc - interactive zsh configuration
+
+# Source profile for PATH and environment
+[[ -f "$HOME/.profile" ]] && source "$HOME/.profile"
+
+# History settings
+HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+HISTSIZE=10000
+SAVEHIST=10000
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt SHARE_HISTORY
+setopt EXTENDED_HISTORY
+
+# Enable colors
+export CLICOLOR=1
+export TERM="xterm-256color"
+
+# Prompt (simple, no dependencies)
+autoload -Uz vcs_info
+precmd() { vcs_info }
+zstyle ':vcs_info:git:*' formats ' (%b)'
+setopt PROMPT_SUBST
+PROMPT='%F{green}%n@%m%f:%F{blue}%~%f%F{yellow}${vcs_info_msg_0_}%f$ '
+
+# Completion
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
+
+# Key bindings (emacs style)
+bindkey -e
+
+# fzf integration (if available)
+if command -v fzf >/dev/null 2>&1; then
+    eval "$(fzf --zsh 2>/dev/null)" || {
+        for dir in /usr/share/fzf "${HOMEBREW_PREFIX:-/opt/homebrew}/opt/fzf/shell"; do
+            [[ -f "$dir/key-bindings.zsh" ]] && source "$dir/key-bindings.zsh"
+            [[ -f "$dir/completion.zsh" ]] && source "$dir/completion.zsh"
+        done
+    }
+fi
+
+# Source aliases
+[[ -f "$HOME/.aliases" ]] && source "$HOME/.aliases"
+
+# Local overrides (not in git)
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"

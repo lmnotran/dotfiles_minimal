@@ -1,0 +1,46 @@
+#!/bin/sh
+# Minimal dotfiles bootstrap - works with bash and zsh
+# Symlinks dotfiles to $HOME
+
+set -e
+
+DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+CONFIG_DIR="${HOME}/.config"
+
+info() { printf "\033[34m[INFO]\033[0m %s\n" "$1"; }
+success() { printf "\033[32m[OK]\033[0m %s\n" "$1"; }
+warn() { printf "\033[33m[WARN]\033[0m %s\n" "$1"; }
+
+link_file() {
+    src="$1"
+    dst="$2"
+
+    if [ -L "$dst" ]; then
+        rm "$dst"
+    elif [ -e "$dst" ]; then
+        warn "Backing up existing $dst to ${dst}.backup"
+        mv "$dst" "${dst}.backup"
+    fi
+
+    ln -s "$src" "$dst"
+    success "Linked $dst -> $src"
+}
+
+info "Starting dotfiles bootstrap from $DOTFILES_DIR"
+
+# Create config directory if needed
+mkdir -p "$CONFIG_DIR"
+
+# Link shell configs
+[ -f "$DOTFILES_DIR/shell/profile" ] && link_file "$DOTFILES_DIR/shell/profile" "$HOME/.profile"
+[ -f "$DOTFILES_DIR/shell/bashrc" ] && link_file "$DOTFILES_DIR/shell/bashrc" "$HOME/.bashrc"
+[ -f "$DOTFILES_DIR/shell/zshrc" ] && link_file "$DOTFILES_DIR/shell/zshrc" "$HOME/.zshrc"
+[ -f "$DOTFILES_DIR/shell/aliases" ] && link_file "$DOTFILES_DIR/shell/aliases" "$HOME/.aliases"
+
+# Link git config
+[ -f "$DOTFILES_DIR/git/gitconfig" ] && link_file "$DOTFILES_DIR/git/gitconfig" "$HOME/.gitconfig"
+
+# Link editor configs
+[ -d "$DOTFILES_DIR/config/nvim" ] && link_file "$DOTFILES_DIR/config/nvim" "$CONFIG_DIR/nvim"
+
+info "Bootstrap complete!"

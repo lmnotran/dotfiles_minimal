@@ -1,0 +1,47 @@
+# Shared aliases - works in bash and zsh
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# ls with colors
+if command -v eza >/dev/null 2>&1; then
+    alias ls='eza'
+    alias ll='eza -la'
+    alias la='eza -a'
+    alias lt='eza --tree'
+elif ls --color=auto >/dev/null 2>&1; then
+    alias ls='ls --color=auto'
+    alias ll='ls -la --color=auto'
+    alias la='ls -A --color=auto'
+else
+    alias ll='ls -la'
+    alias la='ls -A'
+fi
+
+# grep with colors
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# Git shortcuts
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git pull'
+alias gd='git diff'
+alias gco='git checkout'
+alias gb='git branch'
+alias glog='git log --oneline --graph --decorate'
+
+# Safety nets
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Misc
+alias c='clear'
+alias h='history'
+alias path='echo $PATH | tr ":" "\n"'
