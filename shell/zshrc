@@ -1,5 +1,8 @@
 # ~/.zshrc - interactive zsh configuration
 
+# Exit if not interactive
+[[ $- != *i* ]] && return
+
 # Source profile for PATH and environment
 [[ -f "$HOME/.profile" ]] && source "$HOME/.profile"
 

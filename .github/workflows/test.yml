@@ -1,0 +1,120 @@
+name: Test Dotfiles
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-bootstrap:
+    name: Bootstrap (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run bootstrap
+        run: ./script/bootstrap
+
+      - name: Verify symlinks exist
+        run: |
+          test -L ~/.profile && echo "✓ .profile linked"
+          test -L ~/.bashrc && echo "✓ .bashrc linked"
+          test -L ~/.zshrc && echo "✓ .zshrc linked"
+          test -L ~/.aliases && echo "✓ .aliases linked"
+          test -L ~/.gitconfig && echo "✓ .gitconfig linked"
+
+      - name: Verify symlinks point to repo
+        run: |
+          readlink ~/.profile | grep -q "dotfiles_minimal/shell/profile"
+          readlink ~/.bashrc | grep -q "dotfiles_minimal/shell/bashrc"
+          readlink ~/.zshrc | grep -q "dotfiles_minimal/shell/zshrc"
+
+  test-bash:
+    name: Bash syntax & source
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell script syntax
+        run: |
+          bash -n shell/profile
+          bash -n shell/bashrc
+          bash -n shell/aliases
+          bash -n script/bootstrap
+          echo "✓ All scripts pass bash syntax check"
+
+      - name: Run bootstrap and source bashrc
+        run: |
+          ./script/bootstrap
+          bash -c 'source ~/.bashrc && echo "✓ bashrc sources successfully"'
+
+      - name: Verify aliases are loaded (bash)
+        run: |
+          bash -i -c 'type gs' | grep -q "git status" && echo "✓ gs alias works"
+          bash -i -c 'type ll' && echo "✓ ll alias works"
+
+  test-zsh:
+    name: Zsh syntax & source
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Check zsh script syntax
+        run: |
+          zsh -n shell/profile
+          zsh -n shell/zshrc
+          zsh -n shell/aliases
+          echo "✓ All scripts pass zsh syntax check"
+
+      - name: Run bootstrap and source zshrc
+        run: |
+          ./script/bootstrap
+          zsh -i -c 'echo "✓ zshrc sources successfully"'
+
+      - name: Verify aliases are loaded (zsh)
+        run: |
+          zsh -i -c 'which gs' | grep -q "git status" && echo "✓ gs alias works"
+          zsh -i -c 'which ll' && echo "✓ ll alias works"
+
+  test-idempotent:
+    name: Bootstrap is idempotent
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run bootstrap first time
+        run: ./script/bootstrap
+
+      - name: Clear any backup files from first run
+        run: rm -f ~/.*.backup
+
+      - name: Run bootstrap second time
+        run: ./script/bootstrap
+
+      - name: Verify no new backup files created
+        run: |
+          if ls ~/.*.backup 2>/dev/null; then
+            echo "✗ Backup files created on second run (not idempotent)"
+            exit 1
+          fi
+          echo "✓ No backup files from second run"
+
+      - name: Verify symlinks still correct
+        run: |
+          test -L ~/.bashrc && echo "✓ .bashrc still linked"
+          test -L ~/.zshrc && echo "✓ .zshrc still linked"
